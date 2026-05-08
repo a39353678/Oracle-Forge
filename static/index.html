@@ -1,0 +1,1019 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <title>Oracle Forge 神谕台</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      --bg:#f6f5f1; --card:#fff; --soft:#f0efea; --line:#dedbd2;
+      --text:#20231f; --muted:#74756f; --main:#3f5f4d; --main2:#30493b;
+      --warn:#8a5a2b; --danger:#7a3e3e; --ok:#3f5f4d;
+      --shadow:0 10px 26px rgba(32,35,31,.07);
+      --radius:16px; --mono:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono",monospace;
+      --font:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei","Noto Sans CJK SC",Arial,sans-serif;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font);font-size:14px}
+    header{height:64px;display:flex;align-items:center;justify-content:space-between;padding:0 22px;background:rgba(255,255,255,.88);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20;backdrop-filter:blur(10px)}
+    .brand h1{margin:0;font-size:20px;font-weight:760;letter-spacing:.02em}
+    .topStatus{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+    .pill{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;border:1px solid var(--line);background:var(--soft);color:var(--muted);font-size:12px;white-space:nowrap}
+    .dot{width:8px;height:8px;border-radius:50%;background:#a6a6a0}
+    .dot.ok{background:var(--ok)} .dot.bad{background:var(--danger)} .dot.run{background:var(--warn)}
+    main{display:grid;grid-template-columns:330px minmax(580px,1fr) 460px;gap:20px;padding:20px;align-items:start}
+    .col{display:flex;flex-direction:column;gap:18px;min-width:0}
+    .left-col{max-height:none;overflow:visible;padding-right:0}
+    .right-col{position:sticky;top:84px}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px}
+    .card h2{margin:0 0 14px;font-size:16px;font-weight:720}
+    .card h3{margin:14px 0 10px;font-size:14px;font-weight:720}
+    label{display:block;margin:10px 0 6px;color:var(--muted);font-size:12px}
+    input,select,textarea{width:100%;border:1px solid var(--line);background:#fff;color:var(--text);border-radius:12px;padding:10px 11px;font-family:var(--font);outline:none}
+    textarea{min-height:84px;resize:vertical;line-height:1.55}
+    input:focus,select:focus,textarea:focus{border-color:var(--main);box-shadow:0 0 0 3px rgba(63,95,77,.12)}
+    .row{display:flex;gap:10px;align-items:center}.row>*{flex:1}
+    .btnbar{display:flex;flex-wrap:wrap;gap:10px}
+    .btn{border:1px solid var(--line);border-radius:12px;background:#fff;color:var(--text);padding:10px 12px;cursor:pointer;font-weight:650;transition:.12s;white-space:nowrap}
+    .btn:hover{transform:translateY(-1px);box-shadow:0 5px 14px rgba(0,0,0,.08)}
+    .btn.main{background:var(--main);border-color:var(--main);color:#fff}.btn.main:hover{background:var(--main2)}
+    .btn.danger{background:#fff;border-color:#c9b8b8;color:var(--danger)}.btn.ghost{background:var(--soft)}
+    .hint{margin-top:8px;padding:9px 10px;border-radius:12px;background:var(--soft);color:var(--muted);font-size:12px;line-height:1.5}
+    details{border:1px solid var(--line);border-radius:14px;background:#fff}
+    details>summary{cursor:pointer;padding:13px 14px;font-weight:700;list-style:none}
+    details>summary::-webkit-details-marker{display:none}
+    .details-body{padding:0 14px 14px}
+    .chat-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:10px}
+    .chat-tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+    .ctx{min-width:220px}.ctxbar{height:7px;border-radius:999px;background:var(--soft);overflow:hidden;margin-top:5px}.ctxbar>div{height:100%;background:var(--main);width:0%}
+    #aiStatus{margin-bottom:14px;border:1px solid var(--line)}
+    #aiStatus.busy{background:#fff7e6;border-color:#d7b46a;color:#6f4b16;font-weight:700}
+    #aiStatus.blocked{background:#fff0f0;border-color:#d6aaaa;color:#7a3e3e;font-weight:700}
+    #actionSummary.busy{background:#fff7e6;border-color:#d7b46a;color:#6f4b16}
+    #actionSummary.blocked{background:#fff0f0;border-color:#d6aaaa;color:#7a3e3e}
+    .inline-wait{display:inline-flex;align-items:center;gap:8px}
+    .spinner{width:12px;height:12px;border:2px solid rgba(63,95,77,.25);border-top-color:var(--main);border-radius:50%;animation:spin .8s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .chat-box{height:470px;overflow:auto;border:1px solid var(--line);border-radius:16px;padding:14px;background:#fbfaf7}
+    .msg{margin:0 0 14px;display:flex}.msg .bubble{max-width:88%;padding:11px 13px;border-radius:14px;line-height:1.65;white-space:pre-wrap;word-break:break-word;border:1px solid var(--line)}
+    .msg.user{justify-content:flex-end}.msg.user .bubble{background:var(--main);color:#fff;border-color:var(--main)}
+    .msg.assistant{justify-content:flex-start}.msg.assistant .bubble{background:#fff;color:var(--text)}
+    .chat-input{margin-top:12px;display:grid;gap:10px}
+    .plan-card{margin-top:18px;border-top:1px solid var(--line);padding-top:16px}
+    .plan-box{max-height:280px;overflow:auto;white-space:pre-wrap;background:#fbfaf7;border:1px solid var(--line);border-radius:14px;padding:12px;line-height:1.6}
+    .summary-box{margin-top:10px;background:var(--soft);border:1px solid var(--line);border-radius:14px;padding:10px;white-space:pre-wrap;color:var(--muted)}
+    .task-box{border:1px solid var(--line);border-radius:14px;background:#fbfaf7;padding:12px}
+    .task-grid{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;margin-bottom:10px}
+    .task-stat{border:1px solid var(--line);border-radius:12px;background:#fff;padding:10px;min-height:64px}
+    .task-stat b{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}.task-stat span{font-weight:750}
+    .progress{height:10px;border-radius:999px;background:var(--soft);overflow:hidden;margin:10px 0}.progress>div{height:100%;width:0%;background:var(--main);transition:.2s}
+    .mini-log{height:170px;overflow:auto;background:#1f211f;color:#e9e6da;border-radius:14px;padding:12px;font-family:var(--mono);font-size:12px;white-space:pre-wrap;line-height:1.5;margin-top:12px}
+    .logbox{height:calc(100vh - 260px);min-height:620px;overflow:auto;background:#1f211f;color:#e9e6da;border-radius:14px;padding:12px;font-family:var(--mono);font-size:12px;white-space:pre-wrap;line-height:1.5;margin-top:12px}
+    .small{font-size:12px;color:var(--muted)}.split{height:1px;background:var(--line);margin:14px 0}
+    .checkline{display:flex;align-items:center;gap:8px;margin-top:10px}.checkline input{width:auto;margin:0}.hidden{display:none}
+    .quickcmd{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+    .brand-card a{color:var(--main);font-weight:700;text-decoration:none}.brand-card a:hover{text-decoration:underline}
+    .brand-line{display:flex;justify-content:space-between;gap:12px;border-top:1px solid var(--line);padding-top:9px;margin-top:9px}
+    .footer-brand{padding:0 20px 20px;color:var(--muted);font-size:12px;text-align:center}
+    .modal{position:fixed;inset:0;background:rgba(0,0,0,.28);display:none;align-items:center;justify-content:center;z-index:100}.modal .panel{width:min(680px,92vw);background:#fff;border-radius:18px;border:1px solid var(--line);box-shadow:var(--shadow);padding:18px}.modal.show{display:flex}
+    @media(max-width:1350px){main{grid-template-columns:1fr}.left-col{max-height:none}.right-col{position:static}.chat-box{height:420px}.logbox{height:540px}.task-grid{grid-template-columns:1fr 1fr}}
+  
+    .seg{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}
+    .seg .btn.active{background:var(--main);border-color:var(--main);color:#fff}
+    .task-stat.status-running{border-color:#d7b46a;background:#fff7e6}
+    .task-stat.status-success{border-color:#a9c7ad;background:#f0f7ef}
+    .task-stat.status-blocked,.task-stat.status-failed{border-color:#d6aaaa;background:#fff0f0}
+    .stage-line{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 12px}
+    .stage{padding:6px 9px;border-radius:999px;border:1px solid var(--line);background:var(--soft);font-size:12px;color:var(--muted)}
+    .stage.active{background:#fff7e6;border-color:#d7b46a;color:#6f4b16;font-weight:700}
+    .stage.done{background:#f0f7ef;border-color:#a9c7ad;color:#31533d}
+    .status-pop{position:fixed;right:20px;top:74px;width:360px;background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:14px;z-index:50;display:none}
+    .status-pop.show{display:block}
+    .status-pop pre{white-space:pre-wrap;font-family:var(--mono);font-size:12px;background:var(--soft);padding:10px;border-radius:12px;max-height:360px;overflow:auto}
+    .ctx.normal #ctxText{color:var(--ok)}
+    .ctx.warn #ctxText{color:var(--warn);font-weight:700}
+    .ctx.danger #ctxText{color:var(--danger);font-weight:700}
+    #handoffBadge{display:none;margin-left:6px;color:var(--warn);font-weight:700}
+    .complete-card{margin-top:10px;border:1px solid #a9c7ad;background:#f0f7ef;border-radius:14px;padding:12px;display:none;white-space:pre-wrap}
+    .complete-card.show{display:block}
+    .danger-note{font-size:12px;color:var(--danger);margin-top:8px}
+
+  
+    .launcher-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .download-card{margin-top:12px;border:1px solid #a9c7ad;background:#f0f7ef;border-radius:14px;padding:12px;display:none}
+    .download-card.show{display:block}
+    .download-card a{color:var(--main);font-weight:800;text-decoration:none}
+
+  </style>
+</head>
+<body>
+<header>
+  <div class="brand"><h1>Oracle Forge 神谕台</h1></div>
+  <div class="topStatus">
+    <span class="pill" onclick="toggleStatusDetails()" style="cursor:pointer;"><i class="dot" id="authDot"></i>Auth：<span id="authText">未知</span></span>
+    <span class="pill" onclick="toggleStatusDetails()" style="cursor:pointer;"><i class="dot" id="worldDot"></i>World：<span id="worldText">未知</span></span>
+    <span class="pill">在线：<span id="onlineTop">0</span></span>
+    <span class="pill">数据：<span id="dataTop">0/4</span></span>
+    <span class="pill"><i class="dot" id="taskDot"></i>任务：<span id="taskTop">空闲</span></span>
+    <span class="pill">模式：<span id="modeTop">协同</span></span>
+  </div>
+</header>
+<div class="status-pop" id="statusDetails"><b>服务器状态详情</b><pre id="statusDetailsText">读取中...</pre></div>
+
+<main>
+  <section class="col left-col">
+    <details id="modelDetails">
+      <summary>模型配置 <span class="small" id="modelSummary"></span></summary>
+      <div class="details-body">
+        <label>服务商</label><select id="provider"></select>
+        <label>模型</label><select id="model"></select>
+        <label>Base URL</label><input id="baseUrl" placeholder="OpenAI 兼容接口地址" />
+        <label>API Key</label><input id="apiKey" type="password" placeholder="保存后生效" />
+        <label>上下文上限 tokens</label><input id="contextLimit" type="number" value="64000" min="1000" />
+        <div class="btnbar" style="margin-top:12px;">
+          <button class="btn main" onclick="saveConfig()">保存配置</button>
+          <button class="btn ghost" onclick="testConfig()">测试连接</button>
+        </div>
+        <div class="hint" id="configHint">模型配置保存后，会同步显示到 AI 会话顶部。</div>
+      </div>
+    </details>
+
+    <div class="card">
+      <h2>执行模式</h2>
+      <select id="executionMode" onchange="saveMode()">
+        <option value="stable">稳控模式</option>
+        <option value="cooperative">协同模式</option>
+        <option value="autonomous">自治模式</option>
+      </select>
+      <div class="hint" id="modeHint">协同模式：失败后自动分析，但不会未经确认执行高风险修复。</div>
+    </div>
+
+    <div class="card">
+      <h2>一键流程</h2>
+      <label>选择步骤</label>
+      <select id="workflowAction">
+        <option value="init_source">1. 拉取 / 更新 AzerothCore 源码</option>
+        <option value="init_database">2. 初始化 MySQL 数据库</option>
+        <option value="configure_core">3. 生成 CMake 构建配置</option>
+        <option value="build_core">4. 编译并安装服务端</option>
+        <option value="download_official_data">5. 下载 / 导入官方地图数据</option>
+        <option value="prepare_configs">6. 修正服务端配置文件</option>\n        <option value="generate_launcher">7. 登录器生成 / realmlist 修正</option>
+      </select>
+      <button class="btn main" style="margin-top:12px;width:100%;" onclick="runWorkflow()">执行所选步骤</button>
+      <div class="hint">执行后请看中间任务中心；右侧会自动切换到当前任务实时日志。</div>
+    </div>
+
+    <div class="card">
+      <h2>服务控制</h2>
+      <label>动作</label>
+      <select id="serverAction">
+        <option value="start_all">启动服务端</option>
+        <option value="stop_all">停止服务端</option>
+        <option value="restart_all">重启服务端</option>
+        <option value="restart_world">仅重启 worldserver</option>
+      </select>
+      <label>停服 / 重启提前通知秒数</label>
+      <input id="countdown" type="number" value="300" min="0" />
+      <button class="btn main" style="margin-top:12px;width:100%;" onclick="runServerControl()">执行服务动作</button>
+      <div class="hint">停止 / 重启会优先向 worldserver 发送 server shutdown 秒数，让玩家提前看到提示。</div>
+    </div>
+
+    <div class="card">
+      <h2>worldserver 控制台</h2>
+      <input id="worldCommand" placeholder="例如：server info" />
+      <button class="btn ghost" style="margin-top:10px;width:100%;" onclick="sendWorldCommand()">发送命令</button>
+      <div class="quickcmd">
+        <button class="btn ghost" onclick="quickCommand('server info')">server info</button>
+        <button class="btn ghost" onclick="quickCommand('account online')">account online</button>
+        <button class="btn ghost" onclick="quickCommand('reload config')">reload config</button>
+        <button class="btn ghost" onclick="quickCommand('server shutdown 300')">shutdown 300</button>
+      </div>
+      <div class="hint">命令发送后，右侧日志会自动切到 command.log。</div>
+    </div>
+
+    <details id="fileDetails">
+      <summary>文件 / 脚本 / 模块</summary>
+      <div class="details-body">
+        <label>操作类型</label>
+        <input id="fileMode" type="hidden" value="datazip" />
+        <div class="seg" id="fileModeSeg">
+          <button type="button" class="btn active" data-mode="datazip" onclick="setFileMode('datazip')">data.zip</button>
+          <button type="button" class="btn" data-mode="single" onclick="setFileMode('single')">单文件</button>
+          <button type="button" class="btn" data-mode="lua" onclick="setFileMode('lua')">Lua 脚本</button>
+          <button type="button" class="btn" data-mode="module" onclick="setFileMode('module')">C++ 模块</button>
+        </div>
+
+        <div id="fileModeDataZip">
+          <h3>完整地图数据包 data.zip</h3>
+          <input id="dataZip" type="file" accept=".zip" />
+          <button class="btn ghost" style="margin-top:10px;width:100%;" onclick="uploadDataZip()">上传并解压</button>
+        </div>
+
+        <div id="fileModeSingle" class="hidden">
+          <h3>单个地图 / DBC 文件</h3>
+          <input id="dataFile" type="file" />
+          <label>目标目录</label>
+          <select id="dataTarget">
+            <option value="auto">自动识别</option>
+            <option value="dbc">dbc</option>
+            <option value="maps">maps</option>
+            <option value="vmaps">vmaps</option>
+            <option value="mmaps">mmaps</option>
+            <option value="custom">自定义</option>
+          </select>
+          <input id="customDataTarget" class="hidden" placeholder="自定义目录" />
+          <button class="btn ghost" style="margin-top:10px;width:100%;" onclick="uploadDataFile()">上传单文件</button>
+        </div>
+
+        <div id="fileModeLua" class="hidden">
+          <h3>Lua 脚本</h3>
+          <label>来源</label>
+          <select id="luaSource" onchange="switchLuaSource()">
+            <option value="upload">上传文件</option>
+            <option value="url">粘贴 URL</option>
+          </select>
+          <div id="luaUploadBox">
+            <input id="luaFile" type="file" accept=".lua" />
+            <button class="btn ghost" style="margin-top:10px;width:100%;" onclick="uploadLua()">上传 Lua</button>
+          </div>
+          <div id="luaUrlBox" class="hidden">
+            <input id="luaUrl" placeholder="https://example.com/script.lua" />
+            <input id="luaFilename" style="margin-top:8px;" placeholder="文件名，可留空" />
+            <button class="btn ghost" style="margin-top:10px;width:100%;" onclick="installLuaUrl()">下载并安装 Lua</button>
+          </div>
+          <div class="hint">这里只是上传脚本，不等于安装 Lua 引擎。若未安装 ALE 或 Eluna，脚本不会生效。</div>
+        </div>
+
+        <div id="fileModeModule" class="hidden">
+          <h3>C++ 模块</h3>
+          <label>常用模块</label>
+          <button class="btn ghost" style="width:100%;" onclick="presetAle()">官方 ALE Lua Engine</button>
+          <div class="split"></div>
+          <input id="moduleUrl" placeholder="https://github.com/azerothcore/mod-ale.git" />
+          <input id="moduleName" style="margin-top:8px;" placeholder="模块名，可自动识别" />
+          <label class="checkline"><input id="moduleRebuild" type="checkbox" />安装后重新 CMake + 编译</label>
+          <button class="btn ghost" style="margin-top:10px;width:100%;" onclick="installModule()">安装模块</button>
+        </div>
+      </div>
+    </details>
+
+    <details id="brandDetails" class="brand-card" open>
+      <summary>关于 Oracle Forge</summary>
+      <div class="details-body">
+        <div class="hint">Oracle Forge 神谕台是面向 AzerothCore 单机服玩家的 AI 源码编译与服务端控制台。</div>
+        <div class="brand-line"><span>官方网站</span><a href="https://www.gswxy.com" target="_blank" rel="noopener">www.gswxy.com</a></div>
+        <div class="brand-line"><span>开发者</span><b>GSWXY / 耳语海岸</b></div>
+        <div class="brand-line"><span>交流 QQ 群</span><b>938973736</b></div>
+      </div>
+    </details>
+  </section>
+
+  <section class="col">
+    <div class="card">
+      <div class="chat-head">
+        <h2 style="margin:0;">AI 会话</h2>
+        <div class="chat-tools">
+          <span class="pill" id="chatModel">当前模型：读取中</span>
+          <div class="ctx">
+            <div class="small" id="ctxText">上下文占用：估算中</div>
+            <div class="ctxbar"><div id="ctxBar"></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="hint" id="aiStatus">状态：空闲</div>
+      <div class="chat-box" id="chatBox"></div>
+      <div class="chat-input">
+        <textarea id="chatInput" placeholder="和 AI 讨论需求。只有点击“生成方案”才会输出正式执行方案。"></textarea>
+        <div class="btnbar">
+          <button class="btn main" onclick="sendChat()">发送</button>
+          <button class="btn ghost" onclick="openNewChatModal()">新对话<span id="handoffBadge">建议交接</span></button>
+          <button class="btn danger" onclick="forceStop()">强行中断</button>
+          <button class="btn ghost" onclick="generatePlan()">生成方案</button>
+        </div>
+      </div>
+
+      <div class="plan-card">
+        <h2>当前执行方案</h2>
+        <div class="stage-line" id="stageLine">
+          <span class="stage" id="stagePlan">1 方案生成</span>
+          <span class="stage" id="stagePreflight">2 方案预检</span>
+          <span class="stage" id="stageConfirm">3 确认执行</span>
+          <span class="stage" id="stageRun">4 执行中</span>
+          <span class="stage" id="stageDone">5 完成 / 受阻</span>
+        </div>
+        <div class="plan-box" id="planBox">暂无执行方案。</div>
+        <div class="summary-box" id="actionSummary">暂无动作摘要。</div>
+        <div class="btnbar" style="margin-top:12px;">
+          <button class="btn ghost" onclick="preflightPlan()">方案预检</button>
+          <button class="btn main" id="executeBtn" onclick="executePlan()">确认执行</button>
+          <button class="btn ghost" onclick="clearPlan()">清空方案</button>
+        </div>
+      </div>
+
+      <div class="plan-card">
+        <h2>任务中心</h2>
+        <div class="task-box">
+          <div class="task-grid">
+            <div class="task-stat"><b>当前任务</b><span id="taskTitle">空闲</span></div>
+            <div class="task-stat"><b>当前步骤</b><span id="taskStep">暂无任务</span></div>
+            <div class="task-stat"><b>进度</b><span id="taskProgressText">0/0</span></div>
+            <div class="task-stat"><b>耗时</b><span id="taskElapsed">--:--:--</span></div>
+          </div>
+          <div class="progress"><div id="taskProgress"></div></div>
+          <div class="small" id="taskMeta"></div>
+          <div class="hint" id="longTaskHint">任务执行时，这里显示任务状态；完整日志统一在右侧日志观察区查看。</div>
+          <div class="summary-box" id="aiTaskAnalysis">暂无 AI 执行分析。</div>
+          <div class="complete-card" id="completionCard"></div>
+          <h3>最近 10 行</h3>
+          <div class="mini-log" id="taskMiniLog"></div>
+          <div class="btnbar" style="margin-top:10px;">
+            <button class="btn ghost" onclick="showFullTaskLog()">查看完整日志</button>
+            <button class="btn ghost" onclick="analyzeTask()">分析本次任务</button>
+            <button class="btn ghost" onclick="continueTask()">从失败步骤继续</button>
+            <button class="btn danger" onclick="forceStop()">强行中断</button>
+          </div>
+          <div class="danger-note">强行中断会终止当前受控命令；编译中断后可能需要重新编译。</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="col right-col">
+    <div class="card">
+      <h2>日志观察</h2>
+      <label>日志来源</label>
+      <select id="logName" onchange="loadLog()">
+        <option value="__task__">当前任务实时日志</option>
+        <option value="build.log">build.log：编译安装日志</option>
+        <option value="cmake.log">cmake.log：CMake 构建配置日志</option>
+        <option value="server.log">server.log：服务动作日志</option>
+        <option value="World.screen.log">World.screen.log：World 启动输出 / 秒退日志</option>
+        <option value="Auth.screen.log">Auth.screen.log：Auth 启动输出 / 秒退日志</option>
+        <option value="Auth.log">Auth.log：Auth 内部日志</option>
+        <option value="Server.log">Server.log：World 内部日志</option>
+        <option value="source.log">source.log：源码拉取日志</option>
+        <option value="database.log">database.log：数据库初始化日志</option>
+        <option value="data_upload.log">data_upload.log：上传数据 / Lua 日志</option>
+        <option value="data_download.log">data_download.log：地图数据日志</option>
+        <option value="command.log">command.log：控制台命令发送日志</option>
+        <option value="sql.log">sql.log：SQL 执行日志</option>\n        <option value="launcher.log">launcher.log：登录器生成 / realmlist 修正日志</option>
+      </select>
+
+      <label>视图</label>
+      <select id="logView" onchange="renderLog()">
+        <option value="all">全部日志</option>
+        <option value="error">只看错误</option>
+        <option value="last100">最后 100 行</option>
+        <option value="last300">最后 300 行</option>
+      </select>
+
+      <div class="btnbar" style="margin-top:10px;">
+        <button class="btn ghost" onclick="loadLog()">刷新日志</button>
+        <button class="btn ghost" id="autoRefreshBtn" onclick="toggleAutoRefresh()">停止自动刷新</button>
+        <button class="btn ghost" onclick="copyLog()">复制日志</button>
+        <button class="btn main" onclick="analyzeCurrentLog()">分析当前日志</button>
+      </div>
+      <div class="logbox" id="logBox"></div>
+    </div>
+  </section>
+</main>
+
+
+<div class="modal" id="launcherModal">
+  <div class="panel">
+    <h2>登录器生成 / realmlist 修正</h2>
+    <div class="hint">
+      该功能会根据玩家实际连接地址修正 acore_auth.realmlist，并生成 Windows .bat 登录器。不要使用 Docker 容器 IP，外网玩家应填写公网 IP 或域名。
+    </div>
+
+    <div class="launcher-grid">
+      <div>
+        <label>服务器地址 / 域名</label>
+        <input id="launcherServerIp" placeholder="例如 103.91.209.97 或 example.com" />
+      </div>
+      <div>
+        <label>本地地址 localAddress</label>
+        <input id="launcherLocalIp" placeholder="默认同服务器地址" />
+      </div>
+      <div>
+        <label>Realm 名称</label>
+        <input id="launcherRealmName" value="Oracle Forge" />
+      </div>
+      <div>
+        <label>World 端口</label>
+        <input id="launcherWorldPort" type="number" value="8085" />
+      </div>
+    </div>
+
+    <label class="checkline"><input id="launcherUpdateDb" type="checkbox" checked />同步修正 acore_auth.realmlist</label>
+    <label class="checkline"><input id="launcherGenerateBat" type="checkbox" checked />生成 Windows .bat 登录器</label>
+
+    <div class="hint" id="launcherDetectHint">正在等待检测服务器 IP。</div>
+    <div class="download-card" id="launcherResult"></div>
+
+    <div class="btnbar" style="margin-top:14px;">
+      <button class="btn main" onclick="generateLauncher()">开始生成</button>
+      <button class="btn ghost" onclick="closeLauncherModal()">取消</button>
+    </div>
+  </div>
+</div>
+\n<div class="modal" id="newChatModal">
+  <div class="panel">
+    <h2>新对话</h2>
+    <p class="small">新对话只会清空 AI 聊天上下文，不会停止正在执行的任务。</p>
+    <div class="hint">是否生成交接词？生成后可自动作为新会话第一条消息发送，避免丢失项目状态。</div>
+    <label>交接词长度</label>
+    <select id="handoffLength">
+      <option value="short">简短交接词</option>
+      <option value="long">完整交接词</option>
+    </select>
+    <label class="checkline"><input id="autoSendHandoff" type="checkbox" checked />生成后自动发送到新会话</label>
+    <div class="btnbar" style="margin-top:14px;">
+      <button class="btn danger" onclick="directNewChat()">直接新对话</button>
+      <button class="btn main" onclick="handoffNewChat()">生成交接词并新建</button>
+      <button class="btn ghost" onclick="closeNewChatModal()">取消</button>
+    </div>
+  </div>
+</div>
+
+<div class="footer-brand">Oracle Forge 神谕台 · Developed by GSWXY / 耳语海岸 · 官网 https://www.gswxy.com · QQ 群 938973736</div>
+
+<script>
+let providers={}, defaultBase={}, chatHistory=[], currentPlanActions=[], autoRefresh=true, autoTimer=null, aiAbort=null, lastUsage=null, contextLimit=64000, lastTaskStatus='', rawLogContent='', taskStartedAt=null;
+
+function el(id){return document.getElementById(id)}
+function setText(id,t){el(id).textContent=t}
+
+function setAIStatus(t){
+  const node=el("aiStatus");
+  node.classList.remove("busy","blocked");
+  if((t||"").includes("正在")||(t||"").includes("等待")||(t||"").includes("执行方案已提交")||(t||"").includes("执行中")) node.classList.add("busy");
+  if((t||"").includes("受阻")||(t||"").includes("失败")) node.classList.add("blocked");
+  node.innerHTML=(node.classList.contains("busy")?'<span class="inline-wait"><i class="spinner"></i>':'')+"状态："+t+(node.classList.contains("busy")?'</span>':'');
+}
+
+function addMessage(role,content){
+  const box=el("chatBox");
+  const div=document.createElement("div");
+  div.className="msg "+role;
+  const b=document.createElement("div");
+  b.className="bubble";
+  b.textContent=content;
+  div.appendChild(b);
+  box.appendChild(div);
+  box.scrollTop=box.scrollHeight;
+  updateContextLocal();
+}
+
+function estimateTokens(text){
+  let zh=0; for(const ch of (text||"")){if(ch>="\u4e00"&&ch<="\u9fff") zh++}
+  let other=(text||"").length-zh;
+  return Math.round(zh*1.05+other/3.6)+1;
+}
+
+function updateContextLocal(usage){
+  if(usage) lastUsage=usage;
+  let prompt=0;
+  if(lastUsage&&lastUsage.prompt_tokens){prompt=lastUsage.prompt_tokens}
+  else{chatHistory.forEach(m=>prompt+=6+estimateTokens(m.content||""))}
+  let lim=(lastUsage&&lastUsage.context_limit)||contextLimit||64000;
+  let pct=Math.min(100,Math.round(prompt/lim*1000)/10);
+  el("ctxBar").style.width=pct+"%";
+  const ctxNode=document.querySelector(".ctx");
+  ctxNode.classList.remove("normal","warn","danger");
+  let level="正常";
+  if(pct>=85){ctxNode.classList.add("danger"); level="建议生成交接词"; el("handoffBadge").style.display="inline";}
+  else if(pct>=70){ctxNode.classList.add("warn"); level="偏高"; el("handoffBadge").style.display="inline";}
+  else{ctxNode.classList.add("normal"); el("handoffBadge").style.display="none";}
+  let msg=`上下文占用：约 ${pct}%　${level}　${prompt}/${lim} tokens`;
+  if(lastUsage) msg+= lastUsage.is_estimated ? "（估算）" : "（接口返回）";
+  setText("ctxText",msg);
+}
+
+function modelDisplay(data){const cm=data.current_model||{};return (cm.provider||"未知")+" / "+(cm.model||"未知")}
+function setModelPills(text){setText("chatModel","当前模型："+text);setText("modelSummary","当前："+text)}
+
+async function loadConfig(){
+  const r=await fetch("/api/config"); const data=await r.json();
+  providers=data.providers||{}; defaultBase=data.default_base||{};
+  const mc=data.current_model||{}; contextLimit=mc.context_limit||64000;
+  const ps=el("provider"); ps.innerHTML="";
+  Object.keys(providers).forEach(p=>{let o=document.createElement("option");o.value=p;o.textContent=p;ps.appendChild(o)});
+  ps.value=mc.provider||"DeepSeek";
+  updateModelOptions();
+  el("model").value=mc.model||providers[ps.value]?.[0]||"";
+  el("baseUrl").value=mc.base_url||defaultBase[ps.value]||"";
+  el("contextLimit").value=contextLimit;
+  el("apiKey").value="";
+  setModelPills(modelDisplay(data));
+  el("executionMode").value=data.execution_mode||"cooperative";
+  updateModeHint();
+  el("modelDetails").open=!mc.configured;
+}
+
+function updateModelOptions(){
+  const p=el("provider").value, ms=el("model");
+  ms.innerHTML="";
+  (providers[p]||[]).forEach(m=>{let o=document.createElement("option");o.value=m;o.textContent=m;ms.appendChild(o)});
+  el("baseUrl").value=defaultBase[p]||"";
+}
+el("provider").addEventListener("change",updateModelOptions);
+
+async function saveConfig(){
+  const payload={provider:el("provider").value,model:el("model").value,base_url:el("baseUrl").value,api_key:el("apiKey").value,context_limit:parseInt(el("contextLimit").value||"64000",10)};
+  const r=await fetch("/api/config/save",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
+  const data=await r.json();
+  el("configHint").textContent=data.message||"已保存";
+  if(data.current_model){contextLimit=data.current_model.context_limit||64000;setModelPills((data.current_model.provider||"")+" / "+(data.current_model.model||""))}
+  el("modelDetails").open=false; updateContextLocal();
+}
+
+async function testConfig(){
+  el("configHint").textContent="正在测试连接...";
+  const r=await fetch("/api/config/test",{method:"POST"});
+  const d=await r.json();
+  el("configHint").textContent=(d.ok?"测试成功：":"测试失败：")+(d.message||"");
+  updateContextLocal(d.usage);
+}
+
+function updateModeHint(){
+  const m=el("executionMode").value;
+  let t=m==="stable"?"稳控模式：失败即停止，只显示错误和日志。":m==="autonomous"?"自治模式：低风险错误自动修复并继续；中高风险暂停确认。":"协同模式：失败后自动分析，但不会未经确认执行高风险修复。";
+  setText("modeHint",t);
+  setText("modeTop",m==="stable"?"稳控":m==="autonomous"?"自治":"协同");
+}
+async function saveMode(){updateModeHint();await fetch("/api/mode/save",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({mode:el("executionMode").value})})}
+
+async function sendChat(){
+  const input=el("chatInput"), msg=input.value.trim();
+  if(!msg) return;
+  input.value="";
+  addMessage("user",msg);
+  chatHistory.push({role:"user",content:msg});
+  setAIStatus("AI 正在处理：整理上下文 → 调用模型 → 等待返回");
+  aiAbort=new AbortController();
+  try{
+    const r=await fetch("/api/ai/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:msg,history:chatHistory}),signal:aiAbort.signal});
+    const data=await r.json();
+    const reply=data.reply||"无回复";
+    addMessage("assistant",reply);
+    chatHistory.push({role:"assistant",content:reply});
+    if(data.current_model) setModelPills((data.current_model.provider||"")+" / "+(data.current_model.model||""));
+    updateContextLocal(data.usage);
+    setAIStatus("空闲");
+  }catch(e){
+    addMessage("assistant","请求已中断或失败："+e);
+    setAIStatus("空闲");
+  }
+}
+
+function openNewChatModal(){el("newChatModal").classList.add("show")}
+function closeNewChatModal(){el("newChatModal").classList.remove("show")}
+function directNewChat(){chatHistory=[];el("chatBox").innerHTML="";setAIStatus("空闲");updateContextLocal();closeNewChatModal()}
+
+async function handoffNewChat(){
+  setAIStatus("AI 正在生成交接词");
+  const r=await fetch("/api/conversation/handoff",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({history:chatHistory,length:el("handoffLength").value})});
+  const d=await r.json();
+  const handoff=d.handoff||"交接词生成失败。";
+  chatHistory=[]; el("chatBox").innerHTML=""; closeNewChatModal();
+  if(el("autoSendHandoff").checked){el("chatInput").value=handoff; await sendChat()}
+  else{addMessage("user",handoff); chatHistory.push({role:"user",content:handoff})}
+  updateContextLocal(d.usage);
+  setAIStatus("空闲");
+}
+
+async function forceStop(){
+  if(aiAbort) aiAbort.abort();
+  await fetch("/api/task/stop",{method:"POST"});
+  setAIStatus("已请求中断");
+}
+
+
+function setStage(stage){
+  const order=["Plan","Preflight","Confirm","Run","Done"];
+  order.forEach(x=>{
+    const node=el("stage"+x);
+    if(!node) return;
+    node.classList.remove("active","done");
+  });
+  const idx=order.indexOf(stage);
+  order.forEach((x,i)=>{
+    const node=el("stage"+x);
+    if(!node) return;
+    if(i<idx) node.classList.add("done");
+    if(i===idx) node.classList.add("active");
+  });
+}
+
+async function generatePlan(){
+  const msg=el("chatInput").value.trim()||(chatHistory.length?chatHistory[chatHistory.length-1].content:"");
+  if(!msg){el("planBox").textContent="请先输入需求，再生成方案。"; return;}
+  let start=Date.now();
+  el("planBox").textContent="正在生成执行方案，请稍候……";
+  el("actionSummary").classList.add("busy");
+  el("actionSummary").classList.remove("blocked");
+  setStage("Plan");
+  el("actionSummary").textContent="AI 正在整理上下文、调用模型并生成可执行动作。";
+  let timer=setInterval(()=>{
+    let s=Math.floor((Date.now()-start)/1000);
+    setAIStatus(`AI 正在处理：整理上下文 → 生成正式执行方案 → 等待返回（${s}秒）`);
+    el("actionSummary").textContent=`生成方案中：已等待 ${s} 秒。长方案或慢模型会更久，但页面仍在工作。`;
+  },1000);
+  try{
+    const r=await fetch("/api/hermes/plan",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:msg,history:chatHistory})});
+    const data=await r.json();
+    el("planBox").textContent=data.display_reply||data.action_summary||"模型只返回了 JSON，系统未能生成可读方案，请重新生成。";
+    el("actionSummary").classList.remove("busy","blocked");
+    el("actionSummary").textContent=data.action_summary||"暂无动作摘要。";
+    currentPlanActions=data.actions||[];
+    updateContextLocal(data.usage);
+    setAIStatus("空闲");
+  }catch(e){
+    el("planBox").textContent="生成方案失败："+e;
+    el("actionSummary").classList.remove("busy");
+    el("actionSummary").classList.add("blocked");
+    el("actionSummary").textContent="生成方案失败，请查看浏览器或后端日志。";
+    setAIStatus("生成方案失败");
+  }finally{clearInterval(timer)}
+}
+
+async function preflightPlan(){
+  if(!currentPlanActions.length){el("actionSummary").textContent="当前方案没有可执行动作。";return}
+  const r=await fetch("/api/plan/preflight",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({actions:currentPlanActions})});
+  const d=await r.json(); const p=d.preflight||{};
+  let lines=[]; lines.push("方案预检："+(p.ok?"通过":"未通过"));
+  lines.push("动作数量："+((p.actions||[]).length));
+  if(p.fixes&&p.fixes.length) lines.push("自动修正："+p.fixes.join("；"));
+  if(p.issues&&p.issues.length) lines.push("问题："+p.issues.join("；"));
+  if(p.risks) lines.push("风险："+p.risks.map(x=>`${x.index}.${x.action}=${x.risk}`).join("；"));
+  el("actionSummary").textContent=lines.join("\n");
+  setStage("Preflight");
+}
+
+async function executePlan(){
+  if(!currentPlanActions.length){el("planBox").textContent+="\n\n无法执行：当前方案没有 JSON actions。请重新点击“生成方案”。";return}
+  await preflightPlan();
+  let riskText=el("actionSummary").textContent||"";
+  if(riskText.includes("=高")){
+    const ok=confirm("当前方案包含高风险动作，例如停服、重启、SQL 或编译相关操作。确认开始执行？");
+    if(!ok) return;
+  }
+  const btn=el("executeBtn");
+  btn.disabled=true; btn.textContent="执行中...";
+  setStage("Confirm");
+  setAIStatus("执行方案已提交，正在启动任务中心轮询");
+  el("actionSummary").classList.add("busy");
+  el("actionSummary").classList.remove("blocked");
+  el("actionSummary").textContent+="\n\n执行方案已提交。请看下方任务中心；右侧已切换到当前任务实时日志。";
+  setLogSource("__task__");
+  try{
+    const r=await fetch("/api/plan/execute",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({actions:currentPlanActions})});
+    const data=await r.json();
+    el("actionSummary").textContent+="\n\n"+(data.message||JSON.stringify(data));
+    document.getElementById("taskTitle").scrollIntoView({behavior:"smooth",block:"center"});
+    pollTask();
+  }catch(e){
+    el("actionSummary").classList.remove("busy");
+    el("actionSummary").classList.add("blocked");
+    el("actionSummary").textContent+="\n\n提交执行失败："+e;
+    setAIStatus("执行方案提交失败");
+    btn.disabled=false; btn.textContent="确认执行";
+  }
+}
+
+function clearPlan(){currentPlanActions=[];el("planBox").textContent="暂无执行方案。";el("actionSummary").textContent="暂无动作摘要。";el("executeBtn").disabled=false;el("executeBtn").textContent="确认执行"}
+
+async function runWorkflow(){
+  const action=el("workflowAction").value;
+  const r=await fetch("/api/action/run",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action,args:{}})});
+  const d=await r.json(); alert(d.message||JSON.stringify(d)); setLogSource("__task__"); pollTask();
+}
+async function runServerControl(){
+  const action=el("serverAction").value,countdown=parseInt(el("countdown").value||"0",10);
+  const r=await fetch("/api/server/control",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action,countdown})});
+  const d=await r.json(); alert(d.message||JSON.stringify(d)); setLogSource("__task__"); pollTask();
+}
+
+function setFileMode(mode){
+  el("fileMode").value=mode;
+  document.querySelectorAll("#fileModeSeg .btn").forEach(b=>b.classList.toggle("active",b.dataset.mode===mode));
+  switchFileMode();
+}
+function switchFileMode(){
+  ["DataZip","Single","Lua","Module"].forEach(x=>el("fileMode"+x).classList.add("hidden"));
+  let m=el("fileMode").value;
+  el("fileMode"+(m==="datazip"?"DataZip":m==="single"?"Single":m==="lua"?"Lua":"Module")).classList.remove("hidden");
+}
+function switchLuaSource(){el("luaUploadBox").classList.toggle("hidden",el("luaSource").value!=="upload");el("luaUrlBox").classList.toggle("hidden",el("luaSource").value!=="url")}
+el("dataTarget").addEventListener("change",()=>el("customDataTarget").classList.toggle("hidden",el("dataTarget").value!=="custom"));
+
+async function uploadDataZip(){const f=el("dataZip").files[0];if(!f)return alert("请选择 data.zip");const fd=new FormData();fd.append("file",f);const r=await fetch("/api/upload/data-zip",{method:"POST",body:fd});alert((await r.json()).message||"已提交");setLogSource("__task__")}
+async function uploadDataFile(){const f=el("dataFile").files[0];if(!f)return alert("请选择文件");let target=el("dataTarget").value;if(target==="custom")target=el("customDataTarget").value;const fd=new FormData();fd.append("file",f);fd.append("target",target);const r=await fetch("/api/upload/file",{method:"POST",body:fd});alert((await r.json()).message||"已提交");setLogSource("__task__")}
+async function uploadLua(){const f=el("luaFile").files[0];if(!f)return alert("请选择 Lua 文件");const fd=new FormData();fd.append("file",f);const r=await fetch("/api/upload/lua",{method:"POST",body:fd});alert((await r.json()).message||"已提交");setLogSource("__task__")}
+async function installLuaUrl(){const url=el("luaUrl").value.trim();if(!url)return alert("请输入 Lua URL");const r=await fetch("/api/lua/install-url",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({url,filename:el("luaFilename").value.trim()})});alert((await r.json()).message||"已提交");setLogSource("__task__")}
+function presetAle(){el("moduleUrl").value="https://github.com/azerothcore/mod-ale.git";el("moduleName").value="mod-ale";el("moduleRebuild").checked=true}
+async function installModule(){const module_url=el("moduleUrl").value.trim();if(!module_url)return alert("请输入模块 Git URL");const payload={module_url,name:el("moduleName").value.trim(),rebuild:el("moduleRebuild").checked};const r=await fetch("/api/module/install",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});alert((await r.json()).message||"已提交");setLogSource("__task__")}
+
+async function pollRuntime(){
+  try{
+    const r=await fetch("/api/server/runtime"),d=await r.json(),rt=d.runtime||{};
+    let auth=!!rt.auth_running,world=!!rt.world_running;
+    setText("authText",auth?"运行中":"未运行"); setText("worldText",world?"运行中":"未运行");
+    el("authDot").className="dot "+(auth?"ok":"bad"); el("worldDot").className="dot "+(world?"ok":"bad");
+    setText("onlineTop",rt.online_players??0); setText("dataTop",(rt.data_ready||0)+"/4");
+    if(rt.execution_mode){el("executionMode").value=rt.execution_mode;updateModeHint()}
+  }catch(e){}
+}
+
+function elapsedText(startStr){
+  if(!startStr) return "--:--:--";
+  let t=Date.parse(startStr.replace(" ","T"));
+  if(Number.isNaN(t)) return "--:--:--";
+  let s=Math.max(0,Math.floor((Date.now()-t)/1000));
+  let h=String(Math.floor(s/3600)).padStart(2,"0");
+  let m=String(Math.floor((s%3600)/60)).padStart(2,"0");
+  let sec=String(s%60).padStart(2,"0");
+  return `${h}:${m}:${sec}`;
+}
+
+function lastLines(text,n){
+  const arr=(text||"").split(/\r?\n/);
+  return arr.slice(Math.max(0,arr.length-n)).join("\n");
+}
+
+async function pollTask(){
+  try{
+    const r=await fetch("/api/task/current"),d=await r.json(),t=d.task||{},status=t.status||"idle";
+    setText("taskTitle",t.title||t.action||"空闲");
+    setText("taskStep",t.step||"暂无任务");
+    let p=t.progress||{},total=p.total||0,current=p.current||0,pct=total?Math.round(current/total*100):0;
+    el("taskProgress").style.width=pct+"%";
+    setText("taskProgressText",`${current}/${total}`);
+    setText("taskElapsed",elapsedText(t.started_at));
+    setText("taskMeta",`状态：${status}　模式：${t.execution_mode_label||"-"}　开始：${t.started_at||"-"}`);
+    document.querySelectorAll(".task-stat").forEach(x=>x.classList.remove("status-running","status-success","status-blocked","status-failed"));
+    const stateClass=status==="running"?"status-running":status==="success"?"status-success":status==="blocked"?"status-blocked":status==="failed"?"status-failed":"";
+    if(stateClass) document.querySelectorAll(".task-stat").forEach(x=>x.classList.add(stateClass));
+    setText("taskTop",status==="running"?"执行中":status==="success"?"成功":status==="failed"?"失败":status==="blocked"?"受阻":"空闲");
+    el("taskDot").className="dot "+(status==="running"?"run":status==="success"?"ok":(status==="failed"||status==="blocked")?"bad":"");
+    el("aiTaskAnalysis").textContent=t.ai_analysis||"暂无 AI 执行分析。";
+
+    if(status==="running"){
+      el("longTaskHint").textContent="当前为长任务。AzerothCore 编译可能需要 10 - 60 分钟，取决于 CPU、内存和磁盘性能。期间请勿重复点击执行。";
+    }else if(status==="success"){
+      el("longTaskHint").textContent="执行完成。下一步可查看右侧日志，或让 AI 分析本次任务结果。";
+    }else if(status==="blocked"){
+      el("longTaskHint").textContent="执行受阻。请查看失败原因、AI 分析，并决定是否从失败步骤继续。";
+    }else{
+      el("longTaskHint").textContent="任务执行时，这里显示任务状态；完整日志统一在右侧日志观察区查看。";
+    }
+
+    if(status!==lastTaskStatus){
+      lastTaskStatus=status;
+      if(status==="running"){
+        setStage("Run");
+        el("completionCard").classList.remove("show");
+        setAIStatus("执行中：请查看任务中心摘要和右侧完整日志");
+        el("actionSummary").classList.add("busy"); el("actionSummary").classList.remove("blocked");
+        setLogSource("__task__", false);
+      }
+      if(status==="blocked"){
+        setStage("Done");
+        el("completionCard").classList.remove("show");
+        setAIStatus("执行受阻：请查看任务中心的失败原因和 AI 分析");
+        el("actionSummary").classList.remove("busy"); el("actionSummary").classList.add("blocked");
+        const failed=t.failed_action?JSON.stringify(t.failed_action,null,2):"";
+        el("actionSummary").textContent="执行受阻。\n失败原因："+(t.error||t.blocked?.reason||"未知")+"\n\n失败动作：\n"+failed+"\n\n可操作：修复后点击“从失败步骤继续”，或点击“分析本次任务”。";
+        autoSwitchRelatedLog(t);
+        el("executeBtn").disabled=false; el("executeBtn").textContent="确认执行";
+      }
+      if(status==="success"){
+        setStage("Done");
+        setAIStatus("执行完成：成功");
+        el("actionSummary").classList.remove("busy","blocked");
+        el("actionSummary").textContent+="\n\n执行完成：成功。\n下一步建议：查看 World.screen.log，确认服务启动与模块加载情况。";
+        el("completionCard").classList.add("show");
+        el("completionCard").textContent="执行完成\n\n当前状态：\nAuth："+el("authText").textContent+"\nWorld："+el("worldText").textContent+"\n\n下一步建议：\n1. 上传 Lua 测试脚本。\n2. 重启 worldserver。\n3. 查看 World.screen.log 是否出现 Lua 加载信息。";
+        el("executeBtn").disabled=false; el("executeBtn").textContent="确认执行";
+      }
+      if(status==="failed"){
+        setAIStatus("执行失败：请查看任务中心和日志");
+        el("actionSummary").classList.remove("busy"); el("actionSummary").classList.add("blocked");
+        el("executeBtn").disabled=false; el("executeBtn").textContent="确认执行";
+      }
+    }
+
+    const lr=await fetch("/api/task/log"),ld=await lr.json();
+    el("taskMiniLog").textContent=lastLines(ld.log||"",12);
+    if(el("logName").value==="__task__"){rawLogContent=ld.log||""; renderLog();}
+  }catch(e){}
+}
+
+function autoSwitchRelatedLog(t){
+  const fa=t.failed_action||{};
+  const action=fa.action||(fa.failed_action&&fa.failed_action.action)||"";
+  const map={configure_core:"cmake.log",build_core:"build.log",install_module:"__task__",restart_world:"World.screen.log",restart_all:"server.log",start_all:"server.log",run_sql:"sql.log",upload_lua_script:"data_upload.log"};
+  setLogSource(map[action]||"__task__");
+}
+
+async function analyzeTask(){
+  setAIStatus("AI 正在分析本次任务");
+  const r=await fetch("/api/task/analyze",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({})});
+  const d=await r.json();
+  el("aiTaskAnalysis").textContent=d.reply||"无分析结果";
+  addMessage("assistant",d.reply||"无分析结果");
+  updateContextLocal(d.usage);
+  setAIStatus("空闲");
+}
+async function continueTask(){const r=await fetch("/api/plan/continue",{method:"POST"});alert((await r.json()).message||"已提交续跑");setLogSource("__task__")}
+function showFullTaskLog(){setLogSource("__task__")}
+
+function setLogSource(name, load=true){el("logName").value=name;if(load) loadLog()}
+async function loadLog(){
+  const name=el("logName").value;
+  if(name==="__task__"){
+    const r=await fetch("/api/task/log"); const d=await r.json();
+    rawLogContent=d.log||""; renderLog(); return;
+  }
+  const r=await fetch("/api/log/"+encodeURIComponent(name));
+  const d=await r.json();
+  rawLogContent=d.content||"";
+  renderLog();
+}
+function renderLog(){
+  const view=el("logView").value;
+  let text=rawLogContent||"";
+  const lines=text.split(/\r?\n/);
+  if(view==="error"){
+    const re=/error|failed|fatal|cmake error|undefined reference|no such file|traceback|exception|错误|失败|受阻/i;
+    text=lines.filter(x=>re.test(x)).join("\n")||"未筛选到明显错误行。";
+  }else if(view==="last100"){
+    text=lines.slice(Math.max(0,lines.length-100)).join("\n");
+  }else if(view==="last300"){
+    text=lines.slice(Math.max(0,lines.length-300)).join("\n");
+  }
+  el("logBox").textContent=text;
+  el("logBox").scrollTop=el("logBox").scrollHeight;
+}
+function toggleAutoRefresh(){autoRefresh=!autoRefresh;el("autoRefreshBtn").textContent=autoRefresh?"停止自动刷新":"开始自动刷新";if(autoRefresh){autoTimer=setInterval(loadLog,3000);loadLog()}else clearInterval(autoTimer)}
+async function copyLog(){await navigator.clipboard.writeText(el("logBox").textContent||"");alert("日志已复制")}
+async function analyzeCurrentLog(){
+  const name=el("logName").value;
+  if(name==="__task__"){return analyzeTask()}
+  const r=await fetch("/api/log/analyze",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name,history:chatHistory})});
+  const d=await r.json();
+  const prompt=`请分析日志：${name}`;
+  addMessage("user",prompt); addMessage("assistant",d.reply||"无分析结果");
+  chatHistory.push({role:"user",content:prompt},{role:"assistant",content:d.reply||""});
+  updateContextLocal(d.usage);
+}
+
+async function sendWorldCommand(){
+  const command=el("worldCommand").value.trim(); if(!command) return;
+  const r=await fetch("/api/command",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({command})});
+  const d=await r.json();
+  if(d.ok){
+    alert("命令已发送。command.log 只记录发送动作；命令输出请看右侧 World.screen.log。");
+    setLogSource("World.screen.log");
+    setTimeout(loadLog,1200);
+  }else{
+    alert(d.error||JSON.stringify(d));
+    setLogSource("command.log");
+  }
+}
+function quickCommand(cmd){el("worldCommand").value=cmd; sendWorldCommand()}
+
+
+function toggleStatusDetails(){
+  const pop=el("statusDetails");
+  pop.classList.toggle("show");
+  updateStatusDetails();
+  if(statusCloseTimer) clearTimeout(statusCloseTimer);
+  if(pop.classList.contains("show")){
+    statusCloseTimer=setTimeout(()=>pop.classList.remove("show"),8000);
+  }
+}
+async function updateStatusDetails(){
+  try{
+    const r=await fetch("/api/server/runtime");
+    const d=await r.json();
+    const rt=d.runtime||{};
+    const logs=rt.logs||{};
+    const text=[
+      "Auth 进程："+(rt.auth_running?"运行中":"未运行"),
+      "World 进程："+(rt.world_running?"运行中":"未运行"),
+      "Auth 控制台："+((rt.screen||"").includes("oracle-auth")?"可用":"不可用"),
+      "World 控制台："+((rt.screen||"").includes("oracle-world")?"可用":"不可用"),
+      "在线玩家："+(rt.online_players??0),
+      "数据状态："+(rt.data_ready||0)+"/4",
+      "",
+      "Auth.screen.log："+(logs["Auth.screen.log"]||"-"),
+      "Auth.log："+(logs["Auth.log"]||"-"),
+      "World.screen.log："+(logs["World.screen.log"]||"-"),
+      "Server.log："+(logs["Server.log"]||"-"),
+      "",
+      "screen：",
+      rt.screen||"-"
+    ].join("\n");
+    setText("statusDetailsText",text);
+  }catch(e){
+    setText("statusDetailsText","读取状态详情失败："+e);
+  }
+}
+
+
+document.addEventListener("click", function(e){
+  const pop=el("statusDetails");
+  if(!pop || !pop.classList.contains("show")) return;
+  const inPop=pop.contains(e.target);
+  const isStatus=e.target.closest && e.target.closest(".topStatus");
+  if(!inPop && !isStatus) pop.classList.remove("show");
+});
+
+
+async function openLauncherModal(){
+  el("launcherModal").classList.add("show");
+  el("launcherResult").classList.remove("show");
+  try{
+    const r=await fetch("/api/launcher/info");
+    const d=await r.json();
+    const info=d.info||{};
+    if(info.guessed_ip && !el("launcherServerIp").value){
+      el("launcherServerIp").value=info.guessed_ip;
+      el("launcherLocalIp").value=info.guessed_ip;
+    }
+    let msg="检测到 IP："+((info.ips||[]).join(", ")||"未检测到");
+    if((info.docker_like||[]).length) msg+="；Docker 类地址："+info.docker_like.join(", ")+"。外网玩家通常不能使用 Docker IP。";
+    el("launcherDetectHint").textContent=msg;
+  }catch(e){
+    el("launcherDetectHint").textContent="IP 检测失败，请手动填写玩家实际连接的服务器地址。";
+  }
+}
+
+function closeLauncherModal(){
+  el("launcherModal").classList.remove("show");
+}
+
+async function generateLauncher(){
+  const payload={
+    server_ip:el("launcherServerIp").value.trim(),
+    local_ip:el("launcherLocalIp").value.trim(),
+    realm_name:el("launcherRealmName").value.trim()||"Oracle Forge",
+    world_port:parseInt(el("launcherWorldPort").value||"8085",10),
+    update_database:el("launcherUpdateDb").checked,
+    generate_bat:el("launcherGenerateBat").checked
+  };
+  if(!payload.server_ip){
+    alert("请填写服务器地址 / 域名。");
+    return;
+  }
+  if(payload.update_database){
+    const ok=confirm("将修改 acore_auth.realmlist 的 address/localAddress/port。确认继续？");
+    if(!ok) return;
+  }
+
+  setAIStatus("正在生成登录器并修正 realmlist");
+  const r=await fetch("/api/launcher/generate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
+  const d=await r.json();
+  const box=el("launcherResult");
+  box.classList.add("show");
+
+  if(d.ok && d.download_url){
+    box.innerHTML=`<b>登录器已生成</b><br>服务器地址：${d.server_ip}<br>Realm：${d.realm_name}<br>数据库已修正：${d.updated_database?"是":"否"}<br><br><a href="${d.download_url}" target="_blank">下载 ${d.bat_file ? d.bat_file.split("/").pop() : "登录器.bat"}</a><br><br>下一步：把 .bat 放到 Wow.exe 同目录后双击运行。`;
+  }else if(d.ok){
+    box.textContent="realmlist 已处理，但未生成 bat 文件。";
+  }else{
+    box.textContent="生成失败："+(d.error||d.message||JSON.stringify(d));
+  }
+
+  setLogSource("launcher.log");
+  pollTask();
+  setAIStatus("空闲");
+}
+
+async function runWorkflow(){
+  const action=el("workflowAction").value;
+  if(action==="generate_launcher"){
+    openLauncherModal();
+    return;
+  }
+  const r=await fetch("/api/action/run",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action,args:{}})});
+  const d=await r.json(); alert(d.message||JSON.stringify(d)); setLogSource("__task__"); pollTask();
+}
+
+async function init(){
+  await loadConfig();
+  setFileMode(el("fileMode").value||"datazip"); switchLuaSource(); setStage("Plan");
+  await pollRuntime(); await pollTask(); await loadLog();
+  autoTimer=setInterval(loadLog,3000);
+  setInterval(pollRuntime,5000);
+  setInterval(pollTask,2000);
+  setInterval(()=>{const t=el("taskMeta").textContent||""; if(t.includes("开始：")) pollTask()},5000);
+  updateContextLocal();
+}
+init();
+</script>
+</body>
+</html>
+

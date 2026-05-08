@@ -1,0 +1,31 @@
+# Oracle Forge 神谕台 example config.
+# Copy this file to config.yaml and fill in your own values.
+# Do not commit config.yaml.
+
+server:
+  host: "0.0.0.0"
+  port: 7860
+
+ai:
+  provider: ""
+  base_url: ""
+  api_key: ""
+  model: ""
+
+workspace:
+  home: "/opt/oracle-forge"
+  workspace_dir: "/opt/oracle-forge/workspace"
+
+azerothcore:
+  source_dir: "/opt/oracle-forge/workspace/source/azerothcore"
+  build_dir: "/opt/oracle-forge/workspace/build/azerothcore"
+  install_dir: "/opt/azerothcore"
+
+mysql:
+  host: "127.0.0.1"
+  port: 3306
+  user: ""
+  password: ""
+
+safety:
+  mode: "stable"

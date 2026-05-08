@@ -1,0 +1,19 @@
+Oracle Forge 神谕台 v0.1.0-beta.1
+Generated at: 2026-05-08 13:32:11 +0000
+
+Public release files:
+app.py
+CHANGELOG.md
+config.example.yaml
+DISCLAIMER.md
+.env.example
+.gitignore
+hermes_client.py
+install.sh
+LICENSE
+README.md
+RELEASE_MANIFEST.txt
+runner.py
+static/index.html
+systemd/oracle-forge.service
+upgrade.sh
