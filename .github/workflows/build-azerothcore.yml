@@ -1,0 +1,115 @@
+name: 编译 AzerothCore
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: "AzerothCore 分支"
+        required: true
+        default: "master"
+
+jobs:
+  build:
+    name: 编译 AzerothCore
+    runs-on: ubuntu-24.04
+
+    steps:
+      # ==============================
+      # 1. 拉取 AzerothCore
+      # ==============================
+      - name: 拉取 AzerothCore
+        uses: actions/checkout@v4
+        with:
+          repository: azerothcore/azerothcore-wotlk
+          ref: ${{ inputs.branch }}
+          path: azerothcore
+          fetch-depth: 1
+
+      # ==============================
+      # 2. 安装编译依赖
+      # ==============================
+      - name: 安装编译依赖
+        run: |
+          sudo apt-get update
+
+          sudo apt-get install -y \
+            git \
+            cmake \
+            make \
+            gcc \
+            g++ \
+            clang \
+            libssl-dev \
+            libbz2-dev \
+            libreadline-dev \
+            libncurses-dev \
+            libboost-all-dev \
+            libmysqlclient-dev
+
+      # ==============================
+      # 3. 创建编译目录
+      # ==============================
+      - name: 创建编译目录
+        run: |
+          cd azerothcore
+          mkdir build
+
+      # ==============================
+      # 4. CMake 配置
+      # ==============================
+      - name: CMake 配置
+        run: |
+          cd azerothcore/build
+
+          cmake .. \
+            -DCMAKE_INSTALL_PREFIX=$GITHUB_WORKSPACE/azeroth-server \
+            -DCMAKE_C_COMPILER=/usr/bin/clang \
+            -DCMAKE_CXX_COMPILER=/usr/bin/clang++ \
+            -DWITH_WARNINGS=1 \
+            -DTOOLS_BUILD=all \
+            -DSCRIPTS=static \
+            -DMODULES=static
+
+      # ==============================
+      # 5. 编译
+      # ==============================
+      - name: 编译 AzerothCore
+        run: |
+          cd azerothcore/build
+
+          CORES=$(nproc)
+
+          echo "CPU 核心数: $CORES"
+          echo "开始编译..."
+
+          make -j$CORES
+
+      # ==============================
+      # 6. 安装
+      # ==============================
+      - name: 安装编译结果
+        run: |
+          cd azerothcore/build
+
+          make install
+
+      # ==============================
+      # 7. 打包
+      # ==============================
+      - name: 打包
+        run: |
+          cd $GITHUB_WORKSPACE
+
+          tar -czf \
+            AzerothCore-${{ inputs.branch }}.tar.gz \
+            azeroth-server
+
+      # ==============================
+      # 8. 上传编译产物
+      # ==============================
+      - name: 上传编译产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: AzerothCore-${{ inputs.branch }}
+          path: AzerothCore-${{ inputs.branch }}.tar.gz
+          retention-days: 7
