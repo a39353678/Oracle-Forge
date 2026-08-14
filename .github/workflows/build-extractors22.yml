@@ -1,0 +1,143 @@
+name: 编译 AzerothCore 数据提取工具
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: 编译数据提取工具
+    runs-on: ubuntu-22.04
+
+    steps:
+      # ==========================================
+      # 1. 拉取 AzerothCore
+      # ==========================================
+      - name: 拉取 AzerothCore
+        uses: actions/checkout@v4
+        with:
+          repository: azerothcore/azerothcore-wotlk
+          ref: master
+          fetch-depth: 1
+          path: azerothcore
+
+      # ==========================================
+      # 2. 安装编译依赖
+      # ==========================================
+      - name: 安装依赖
+        run: |
+          sudo apt-get update
+
+          sudo apt-get install -y \
+            git \
+            cmake \
+            make \
+            gcc \
+            g++ \
+            libssl-dev \
+            libbz2-dev \
+            libreadline-dev \
+            libncurses-dev \
+            libboost-all-dev \
+            libmysqlclient-dev
+
+      # ==========================================
+      # 3. 创建编译目录
+      # ==========================================
+      - name: 创建 Build 目录
+        run: |
+          cd azerothcore
+          mkdir build
+
+      # ==========================================
+      # 4. CMake
+      # ==========================================
+      - name: CMake 配置
+        run: |
+          cd azerothcore/build
+
+          cmake .. \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DTOOLS_BUILD=all \
+            -DSCRIPTS=static \
+            -DMODULES=static
+
+      # ==========================================
+      # 5. 只编译数据提取工具
+      # ==========================================
+      - name: 编译提取工具
+        run: |
+          cd azerothcore/build
+
+          make -j$(nproc) \
+            map_extractor \
+            vmap4_extractor \
+            vmap4_assembler \
+            mmaps_generator
+
+      # ==========================================
+      # 6. 检查编译结果
+      # ==========================================
+      - name: 检查工具
+        run: |
+          echo "=============================="
+          echo "提取工具："
+          echo "=============================="
+
+          ls -lh \
+            bin/map_extractor \
+            bin/vmap4_extractor \
+            bin/vmap4_assembler \
+            bin/mmaps_generator
+
+          echo ""
+          echo "=============================="
+          echo "依赖检查："
+          echo "=============================="
+
+          ldd bin/map_extractor
+          ldd bin/vmap4_extractor
+          ldd bin/vmap4_assembler
+          ldd bin/mmaps_generator
+
+      # ==========================================
+      # 7. 整理文件
+      # ==========================================
+      - name: 整理提取工具
+        run: |
+          mkdir -p extractors
+
+          cp azerothcore/build/bin/map_extractor extractors/
+          cp azerothcore/build/bin/vmap4_extractor extractors/
+          cp azerothcore/build/bin/vmap4_assembler extractors/
+          cp azerothcore/build/bin/mmaps_generator extractors/
+
+          # MMaps 生成器需要这个配置文件
+          if [ -f azerothcore/data/sql/base/db_world/ ]; then
+            true
+          fi
+
+          chmod +x extractors/*
+
+          echo "最终文件："
+          ls -lh extractors/
+
+      # ==========================================
+      # 8. 打包
+      # ==========================================
+      - name: 打包
+        run: |
+          tar -czf \
+            AzerothCore-extractors-ubuntu22.04.tar.gz \
+            extractors
+
+          ls -lh AzerothCore-extractors-ubuntu22.04.tar.gz
+
+      # ==========================================
+      # 9. 上传 Artifact
+      # ==========================================
+      - name: 上传提取工具
+        uses: actions/upload-artifact@v4
+        with:
+          name: AzerothCore-extractors-ubuntu22.04
+          path: AzerothCore-extractors-ubuntu22.04.tar.gz
+          retention-days: 7
